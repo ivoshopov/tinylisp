@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include "lexp.h"
 
 /* we only need two types to implement a Lisp interpreter:
         iobj unsigned integer (either 16 bit, 32 bit or 64 bit unsigned)
@@ -21,16 +22,6 @@
         e,d  environment, a list of pairs, e.g. created with (define v x)
         v    the name of a variable (an atom) or a list of variables */
 #define iobj unsigned
-/* Type of the lisp expresion type */
-#define ttyp unsigned
-/* heap or stack pointer type */
-#define hsptyp unsigned
-
-/* Lisp object */
-#define lexp double
-
-/* typof(x) returns the tag bits of a NaN-boxed Lisp expression x */
-#define typof(x) *(unsigned long long*)&x >> 48
 
 /* address of the atom heap is at the bottom of the cell stack */
 #define A (char*)cell
@@ -44,29 +35,11 @@
 hsptyp hp = 0;
 hsptyp sp = N;
 
-/* atom, primitive, cons, closure and nil tags for NaN boxing */
-ttyp ATOM = 0x7ff8, PRIM = 0x7ff9, CONS = 0x7ffa, CLOS = 0x7ffb, NIL = 0x7ffc;
-
 /* cell[N] array of Lisp expressions, shared by the stack and atom heap */
 lexp cell[N];
 
 /* Lisp constant expressions () (nil), #t, ERR, and the global environment env */
 lexp nil, tru, err, env;
-
-/* NaN-boxing specific functions:
-   box(t,i): returns a new NaN-boxed double with tag t and ordinal i
-   ord(x):   returns the ordinal of the NaN-boxed double x
-   num(n):   convert or check number n (does nothing, e.g. could check for NaN)
-   equ(x,y): returns nonzero if x equals y */
-lexp box(ttyp t, hsptyp i) {
-  lexp x;
-  *(unsigned long long*)&x = (unsigned long long)t << 48 | i;
-  return x;
-}
-
-hsptyp ord(lexp x) {
-  return *(unsigned long long*)&x;      /* the return value is narrowed to 32 bit unsigned integer to remove the tag */
-}
 
 lexp num(lexp n) {
   return n;
