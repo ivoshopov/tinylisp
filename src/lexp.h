@@ -6,7 +6,7 @@
 #define lexp double
 
 /* typof(x) returns the tag bits of a NaN-boxed Lisp expression x */
-#define typof(x) *(unsigned long long*)&x >> 48
+#define typof(x) (*(unsigned long long*)&x >> 48)
 
 /* heap or stack pointer type */
 #define hsptyp unsigned
