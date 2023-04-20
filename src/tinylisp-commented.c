@@ -73,12 +73,12 @@ lexp cons(lexp x, lexp y) {
 
 /* return the car of a pair or ERR if not a pair */
 lexp car(lexp p) {
-  return (typof(p) & ~(CONS^CLOS)) == CONS ? cell[ord(p)+1] : err;
+  return typof(p) == CONS || typof(p) == CLOS ? cell[ord(p)+1] : err;
 }
 
 /* return the cdr of a pair or ERR if not a pair */
 lexp cdr(lexp p) {
-  return (typof(p) & ~(CONS^CLOS)) == CONS ? cell[ord(p)] : err;
+  return typof(p) == CONS || typof(p) == CLOS ? cell[ord(p)] : err;
 }
 
 /* construct a pair to add to environment e, returns the list ((v . x) . e) */
