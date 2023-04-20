@@ -166,8 +166,10 @@ lexp f_add(lexp t, lexp e) {
   lexp n;
   t = evlis(t, e);
   n = car(t);
+  /* TODO: verify car(t) is a number */
   while (!not(t = cdr(t)))
     n += car(t);
+    /* TODO: verify car(t) is a number */
   return num(n);
 }
 
