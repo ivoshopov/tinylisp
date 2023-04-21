@@ -45,10 +45,6 @@ lexp num(lexp n) {
   return n;
 }
 
-bool equ(lexp x, lexp y) {
-  return *(unsigned long long*)&x == *(unsigned long long*)&y;
-}
-
 /* interning of atom names (Lisp symbols), returns a unique NaN-boxed ATOM */
 lexp atom(const char *s) {
   hsptyp i = 0;
@@ -202,7 +198,7 @@ lexp f_div(lexp t, lexp e) {
 
 lexp f_int(lexp t, lexp e) {
   lexp n = car(evlis(t, e));
-  return n<1e16 && n>-1e16 ? (long long)n : n;
+  return numtoint(n);
 }
 
 lexp f_lt(lexp t, lexp e) {
@@ -376,7 +372,7 @@ lexp quote() {
 /* return a parsed atomic Lisp expression (a number or an atom) */
 lexp atomic() {
   lexp n; iobj i;
-  return (sscanf(buf, "%lg%n", &n, &i) > 0 && !buf[i]) ? n :
+  return (sscanf(buf, "%"NUM_FMT"%n", &n, &i) > 0 && !buf[i]) ? n :
          atom(buf);
 }
 
@@ -417,7 +413,7 @@ void print(lexp x) {
   else if (typof(x) == CLOS)
     printf("{%u}", ord(x));
   else
-    printf("%.10lg", x);
+    printf("%"NUM_FMT, x);
 }
 
 /* garbage collection removes temporary cells, keeps global environment */

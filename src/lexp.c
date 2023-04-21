@@ -18,3 +18,7 @@ hsptyp ord(lexp x) {
   return *(unsigned long long*)&x;      /* the return value is narrowed to 32 bit unsigned integer to remove the tag */
 }
 
+bool equ(lexp x, lexp y) {
+  return *(unsigned long long*)&x == *(unsigned long long*)&y;
+}
+
