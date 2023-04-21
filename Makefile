@@ -1,20 +1,20 @@
 
-elf=tinylisp
-NM=nm
-src=src/tinylisp-commented.c src/lexp.c
-CFLAGS=-Wall -Wextra
+NM = nm
+export NM
+MAKE = make
+export MAKE
+CFLAGS = -Wall -Wextra
+export CFLAGS
 
-all: src/$(elf)
 
-src/$(elf): $(src)
-	$(CC) $(CFLAGS) $^ -o $@
+subdirs := src
 
-%.s: %.c
-	$(CC) $(CFLAGS) -S -fverbose-asm $< -o $@
+$(MAKECMDGOALS) all: $(subdirs)
+	@:
 
-%.lst: %.s
-	$(AS) -alhnd $< > $@
+.PHONY: $(subdirs)
+$(subdirs):
+	$(MAKE) -f Makefile.base subdir=$@ $(MAKECMDGOALS)
 
-src/$(elf).sym: src/$(elf)
-	$(NM) -S --size-sort -t d  <$< >$@
+
 

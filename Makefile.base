@@ -1,0 +1,39 @@
+
+ifeq ($(subdir),)
+$(error Error: The subdir must not be empty. It shouldbe either "." or a path to the source code subdirectory.)
+endif
+
+-include $(subdir)/obj.mk
+
+obj-y := $(addprefix $(subdir)/,$(obj-y))
+src = $(obj-y:.o=.c)
+elf-y := $(addprefix $(subdir)/,$(elf-y))
+
+all: $(elf-y)
+
+$(elf-y): $(src)
+	$(CC) $(CFLAGS) $^ -o $@
+
+%.s: %.c
+	$(CC) $(CFLAGS) -S -fverbose-asm $< -o $@
+
+%.lst: %.s
+	$(AS) -alhnd $< > $@
+
+$(elf-y).sym: $(elf-y)
+	$(NM) -S --size-sort -t d  <$< >$@
+
+clean:
+	-rm $(elf-y)
+	-rm $(elf-y).sym
+	-rm $(subdir)/*.lst
+	-rm $(subdir)/*.s
+	-rm $(obj-y)
+
+
+test:
+	$(MAKE) clean
+	$(MAKE) $(elf-y)
+	$(MAKE) $(obj-y:.o=.lst)
+	$(MAKE) $(elf-y).sym
+	$(MAKE) clean
