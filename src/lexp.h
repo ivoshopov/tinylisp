@@ -1,11 +1,11 @@
 
 #include <stdbool.h>
 
-/* Type of the lisp expresion type */
-#define ttyp unsigned
+/* Type of the lisp expression type */
+#define ttyp unsigned int
 
 /* Lisp object */
-#define lexp double
+typedef double lexp; /* typedef is preferred over #define because gdb pretty printer won't works */
 
 #define NUM_FMT	"lg"
 
