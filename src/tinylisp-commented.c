@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-#include "lexp.h"
+#include <lexp.h>
+#include <module/error/single.h>
 
 /* we only need two types to implement a Lisp interpreter:
         iobj unsigned integer (either 16 bit, 32 bit or 64 bit unsigned)
@@ -39,7 +40,7 @@ hsptyp sp = N;
 lexp cell[N];
 
 /* Lisp constant expressions () (nil), #t, ERR, and the global environment env */
-lexp nil, tru, err, env;
+lexp nil, tru, env;
 
 lexp num(lexp n) {
   return n;
@@ -69,12 +70,12 @@ lexp cons(lexp x, lexp y) {
 
 /* return the car of a pair or ERR if not a pair */
 lexp car(lexp p) {
-  return typof(p) == CONS || typof(p) == CLOS ? cell[ord(p)+1] : err;
+  return typof(p) == CONS || typof(p) == CLOS ? cell[ord(p)+1] : mk_error("Couldn't take the car of: ", p);
 }
 
 /* return the cdr of a pair or ERR if not a pair */
 lexp cdr(lexp p) {
-  return typof(p) == CONS || typof(p) == CLOS ? cell[ord(p)] : err;
+  return typof(p) == CONS || typof(p) == CLOS ? cell[ord(p)] : mk_error("Couldn't take the cdr of: ", p);
 }
 
 /* construct a pair to add to environment e, returns the list ((v . x) . e) */
@@ -91,7 +92,7 @@ lexp closure(lexp v, lexp x, lexp e) {
 lexp assoc(lexp v, lexp e) {
   while (typof(e) == CONS && !equ(v, car(car(e))))
     e = cdr(e);
-  return typof(e) == CONS ? cdr(car(e)) : err;
+  return typof(e) == CONS ? cdr(car(e)) : mk_error("Couldn't find the symbol: ", v); // TODO: add  " in envirnment: ", e);
 }
 
 /* not(x) is nonzero if x is the Lisp () empty list */
@@ -295,7 +296,7 @@ lexp reduce(lexp f, lexp t, lexp e) {
 lexp apply(lexp f, lexp t, lexp e) {
   return typof(f) == PRIM ? prim[ord(f)].f(t, e) :
          typof(f) == CLOS ? reduce(f, t, e) :
-         err;
+         mk_error("Couldn't apply/call:", f);
 }
 
 /* evaluate x and return its value in environment e */
@@ -426,7 +427,7 @@ int main() {
   iobj i;
   printf("tinylisp");
   nil = box(NIL, 0);
-  err = atom("ERR");
+  single_err.setup();
   tru = atom("#t");
   env = pair(tru, tru, nil);
   for (i = 0; prim[i].s; ++i)

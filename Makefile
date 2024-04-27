@@ -3,7 +3,7 @@ NM = nm
 export NM
 MAKE = make
 export MAKE
-CFLAGS = -Wall -Wextra
+CFLAGS = -Wall -Wextra -g -Isrc
 export CFLAGS
 
 
