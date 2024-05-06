@@ -6,7 +6,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <lexp.h>
-#include <module/error/single.h>
+#include <module/module.h>
+#include <module/error/mk_error.h>
 
 /* we only need two types to implement a Lisp interpreter:
         iobj unsigned integer (either 16 bit, 32 bit or 64 bit unsigned)
@@ -422,12 +423,21 @@ void gc() {
   sp = ord(env);
 }
 
+// Begin and end of module list
+extern struct module __start_modules;
+extern struct module __stop_modules;
+
 /* Lisp initialization and REPL */
 int main() {
   iobj i;
+  struct module *mod_iter = &__start_modules;
   printf("tinylisp");
   nil = box(NIL, 0);
-  single_err.setup();
+
+  // Initialization of modules
+  for ( ; mod_iter < &__stop_modules; ++mod_iter) {
+    mod_iter->setup();
+  }
   tru = atom("#t");
   env = pair(tru, tru, nil);
   for (i = 0; prim[i].s; ++i)

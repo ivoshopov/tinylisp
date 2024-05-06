@@ -4,7 +4,7 @@
 
 static lexp err;
 
-lexp mk_error( char str, lexp contex )
+lexp _mk_error( char *file, char *line, char *str, lexp contex )
 {
 	return err;
 }
@@ -16,7 +16,7 @@ static void init()
 	err = atom("ERR");
 }
 
-struct module single_err = {
+MODULE_SECTION struct module single_err = {
 	.setup = init,
 };
 

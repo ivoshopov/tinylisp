@@ -3,6 +3,7 @@ ifeq ($(subdir),)
 $(error Error: The subdir must not be empty. It should be either "." or a path to the source code subdirectory.)
 endif
 
+-include .config
 -include $(subdir)/obj.mk
 
 obj-y := $(addprefix $(subdir)/,$(obj-y))
