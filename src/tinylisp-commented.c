@@ -73,12 +73,12 @@ lexp cons(lexp x, lexp y) {
 
 /* return the car of a pair or ERR if not a pair */
 lexp car(lexp p) {
-  return typof(p) == CONS || typof(p) == CLOS ? cell[ord(p)+1] : mk_error("Couldn't take the car of: ", p);
+  return typof(p) == CONS || typof(p) == CLOS || typof(p) == MACR ? cell[ord(p)+1] : mk_error("Couldn't take the car of: ", p);
 }
 
 /* return the cdr of a pair or ERR if not a pair */
 lexp cdr(lexp p) {
-  return typof(p) == CONS || typof(p) == CLOS ? cell[ord(p)] : mk_error("Couldn't take the cdr of: ", p);
+  return typof(p) == CONS || typof(p) == CLOS || typof(p) == MACR ? cell[ord(p)] : mk_error("Couldn't take the cdr of: ", p);
 }
 
 /* construct a pair to add to environment e, returns the list ((v . x) . e) */
@@ -89,6 +89,11 @@ lexp pair(lexp v, lexp x, lexp e) {
 /* construct a closure, returns a NaN-boxed CLOS */
 lexp closure(lexp v, lexp x, lexp e) {
   return box(CLOS, ord(pair(v, x, equ(e, env) ? nil : e)));
+}
+
+/* construct a macro, returns a NaN-boxed MACR */
+lexp macro(lexp v, lexp x) {
+  return box(MACR, ord(cons(v, x)));
 }
 
 /* look up a symbol in an environment, return its value or ERR if not found */
@@ -257,6 +262,11 @@ lexp f_define(lexp t, lexp e) {
   return car(t);
 }
 
+lexp f_macro(lexp t, lexp e) {
+  UNUSED(e);
+  return macro(car(t), car(cdr(t)));
+}
+
 /* table of Lisp primitives, each has a name s and function pointer f */
 struct {
   const char *s;
@@ -282,6 +292,7 @@ struct {
   {"let*",   f_leta},
   {"lambda", f_lambda},
   {"define", f_define},
+  {"macro",  f_macro},
   {0}};
 
 /* create environment by extending e with variables v bound to values t */
@@ -296,10 +307,15 @@ lexp reduce(lexp f, lexp t, lexp e) {
   return eval(cdr(car(f)), bind(car(car(f)), evlis(t, e), not(cdr(f)) ? env : cdr(f)));
 }
 
+lexp expand(lexp f, lexp t, lexp e) {
+  return eval(eval(cdr(f), bind(car(f), t, env)), e);
+}
+
 /* apply closure or primitive f to arguments t in environment e, or return ERR */
 lexp apply(lexp f, lexp t, lexp e) {
   return typof(f) == PRIM ? prim[ord(f)].f(t, e) :
          typof(f) == CLOS ? reduce(f, t, e) :
+         typof(f) == MACR ? expand(f, t, e) :
          mk_error("Couldn't apply/call:", f);
 }
 
@@ -417,6 +433,8 @@ void print(lexp x) {
     printlist(x);
   else if (typof(x) == CLOS)
     printf("{%u}", ord(x));
+  else if (typof(x) == MACR)
+    printf("[%u]", ord(x));
   else
     printf("%"NUM_FMT, x);
 }

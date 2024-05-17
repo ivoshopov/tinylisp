@@ -21,4 +21,4 @@ typedef double lexp; /* typedef is preferred over #define because gdb pretty pri
 lexp box(ttyp t, hsptyp i);
 hsptyp ord(lexp x);
 bool equ(lexp x, lexp y);
-extern ttyp ATOM, PRIM, CONS, CLOS, NIL;
+extern ttyp ATOM, PRIM, CONS, CLOS, NIL, MACR;

@@ -1,7 +1,7 @@
 #include "lexp.h"
 
 /* atom, primitive, cons, closure and nil tags for NaN boxing */
-ttyp ATOM = 0x7ff8, PRIM = 0x7ff9, CONS = 0x7ffa, CLOS = 0x7ffb, NIL = 0x7ffc;
+ttyp ATOM = 0x7ff8, PRIM = 0x7ff9, CONS = 0x7ffa, CLOS = 0x7ffb, NIL = 0x7ffc, MACR = 0x7ffd;
 
 /* NaN-boxing specific functions:
    box(t,i): returns a new NaN-boxed double with tag t and ordinal i
