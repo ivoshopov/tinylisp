@@ -8,6 +8,8 @@
 #include <lexp.h>
 #include <module/module.h>
 #include <module/error/mk_error.h>
+#include <unused.h>
+
 
 /* we only need two types to implement a Lisp interpreter:
         iobj unsigned integer (either 16 bit, 32 bit or 64 bit unsigned)
@@ -144,6 +146,7 @@ lexp f_eval(lexp t, lexp e) {
 }
 
 lexp f_quote(lexp t, lexp _) {
+  UNUSED(_);
   return car(t);
 }
 

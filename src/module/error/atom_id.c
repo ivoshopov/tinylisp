@@ -1,6 +1,7 @@
 #include <lexp.h>
 #include <module/module.h>
 #include <stdio.h>
+#include <unused.h>
 
 lexp atom(const char *s);
 
