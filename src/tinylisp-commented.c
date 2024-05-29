@@ -259,7 +259,7 @@ lexp f_lambda(lexp t, lexp e) {
 
 lexp f_define(lexp t, lexp e) {
   env = pair(car(t), eval(car(cdr(t)), e), env);
-  return car(t);
+  return nil;
 }
 
 lexp f_macro(lexp t, lexp e) {
@@ -448,7 +448,6 @@ void gc() {
 int main() {
   iobj i;
   struct module *mod_iter = &__start_modules;
-  printf("tinylisp");
   nil = box(NIL, 0);
 
   // Initialization of modules
@@ -460,8 +459,8 @@ int main() {
   for (i = 0; prim[i].s; ++i)
     env = pair(atom(prim[i].s), box(PRIM, i), env);
   while (1) {
-    printf("\n%u>", sp-hp/8);
     print(eval(read(), env));
     gc();
+    printf("\n");
   }
 }
