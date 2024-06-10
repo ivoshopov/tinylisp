@@ -332,11 +332,31 @@ lexp apply(lexp f, lexp t, lexp e) {
 }
 
 /* evaluate x and return its value in environment e */
-lexp eval(lexp x, lexp e) {
+lexp _eval(lexp x, lexp e) {
   return typof(x) == ATOM ? assoc(x, e) :
          typof(x) == CONS ? apply(eval(car(x), e), cdr(x), e) :
          x;
 }
+
+#if CONFIG_TRACE
+void print(lexp);
+lexp eval(lexp x,lexp e) {
+  static int indent = 0;
+  indent++;
+  lexp y = _eval(x,e);
+  printf("%u: ",sp);
+  for (int i=indent; i>1; i--)
+    printf("  ");
+  print(x); printf(" => "); print(y); printf("\n");
+  indent--;
+  return y;
+}
+
+#else /* CONFIG_TRACE */
+inline lexp eval(lexp x,lexp e) {
+  return _eval(x, e);
+}
+#endif /* CONFIG_TRACE */
 
 /* tokenization buffer and the next character that we are looking at */
 char buf[40], see = ' ';
