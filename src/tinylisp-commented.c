@@ -103,6 +103,13 @@ lexp assoc(lexp v, lexp e) {
   return typof(e) == CONS ? cdr(car(e)) : mk_error("Couldn't find the symbol: ", v); // TODO: add  " in envirnment: ", e);
 }
 
+/* look up a symbol in a associative list and return a pair or nil if not found */
+lexp assoc_pair(lexp v, lexp e) {
+  while (typof(e) == CONS && !equ(v, car(car(e))))
+    e = cdr(e);
+  return typof(e) == CONS ? car(e) : nil;
+}
+
 /* not(x) is nonzero if x is the Lisp () empty list */
 bool not(lexp x) {
   return typof(x) == NIL;
@@ -267,6 +274,10 @@ lexp f_macro(lexp t, lexp e) {
   return macro(car(t), car(cdr(t)));
 }
 
+lexp f_assoc(lexp t, lexp e) {
+  return t = evlis(t,e),assoc_pair(car(t),car(cdr(t)));
+}
+
 /* table of Lisp primitives, each has a name s and function pointer f */
 struct {
   const char *s;
@@ -293,6 +304,7 @@ struct {
   {"lambda", f_lambda},
   {"define", f_define},
   {"macro",  f_macro},
+  {"assoc",  f_assoc},
   {0}};
 
 /* create environment by extending e with variables v bound to values t */
