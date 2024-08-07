@@ -9,6 +9,7 @@
 #include <module/module.h>
 #include <module/error/mk_error.h>
 #include <unused.h>
+#include <primitive.h>
 
 
 /* we only need two types to implement a Lisp interpreter:
@@ -279,10 +280,7 @@ lexp f_assoc(lexp t, lexp e) {
 }
 
 /* table of Lisp primitives, each has a name s and function pointer f */
-struct {
-  const char *s;
-  lexp (*f)(lexp, lexp);
-} prim[] = {
+PRIMITIVE_SECTION struct primitive core_prim[] = {
   {"eval",   f_eval},
   {"quote",  f_quote},
   {"cons",   f_cons},
@@ -305,7 +303,7 @@ struct {
   {"define", f_define},
   {"macro",  f_macro},
   {"assoc",  f_assoc},
-  {0}};
+  };
 
 /* create environment by extending e with variables v bound to values t */
 lexp bind(lexp v, lexp t, lexp e) {
@@ -325,6 +323,7 @@ lexp expand(lexp f, lexp t, lexp e) {
 
 /* apply closure or primitive f to arguments t in environment e, or return ERR */
 lexp apply(lexp f, lexp t, lexp e) {
+  struct primitive *prim = &__start_primitives;
   return typof(f) == PRIM ? prim[ord(f)].f(t, e) :
          typof(f) == CLOS ? reduce(f, t, e) :
          typof(f) == MACR ? expand(f, t, e) :
@@ -455,6 +454,7 @@ void printlist(lexp t) {
 
 /* display a Lisp expression x */
 void print(lexp x) {
+  struct primitive *prim = &__start_primitives;
   if (typof(x) == NIL)
     printf("()");
   else if (typof(x) == ATOM)
@@ -480,6 +480,7 @@ void gc() {
 int main() {
   iobj i;
   struct module *mod_iter = &__start_modules;
+  struct primitive *prim_iter = &__start_primitives;
   nil = box(NIL, 0);
 
   // Initialization of modules
@@ -488,8 +489,8 @@ int main() {
   }
   tru = atom("#t");
   env = pair(tru, tru, nil);
-  for (i = 0; prim[i].s; ++i)
-    env = pair(atom(prim[i].s), box(PRIM, i), env);
+  for (i = 0; prim_iter < &__stop_primitives; ++i, ++prim_iter)
+    env = pair(atom(prim_iter->s), box(PRIM, i), env);
   while (1) {
     print(eval(read(), env));
     gc();
