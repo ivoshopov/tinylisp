@@ -423,10 +423,6 @@ void gc() {
   sp = ord(env);
 }
 
-// Begin and end of module list
-extern struct module __start_modules;
-extern struct module __stop_modules;
-
 /* Lisp initialization and REPL */
 int main() {
   iobj i;
