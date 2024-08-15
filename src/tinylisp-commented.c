@@ -467,6 +467,8 @@ void print(lexp x) {
     printf("{%u}", ord(x));
   else if (typof(x) == MACR)
     printf("[%u]", ord(x));
+  else if (typof(x) == BOX)
+    printf("(box[%u])", ord(x));
   else
     printf("%"NUM_FMT, x);
 }

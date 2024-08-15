@@ -26,14 +26,16 @@ class LexpPrinter:
     CONS = "0x7ffa"
     CLOS = "0x7ffb"
     NIL  = "0x7ffc"
-    STR  = "0x7ffd"
+    MACR = "0x7ffd"
+    BOX  = "0x7ffe"
     tag_str = {
             ATOM: "ATOM",
             PRIM: "PRIM",
             CONS: "CONS",
             CLOS: "CLOS",
-            NIL: "NIL",
-            STR: "STR",
+            NIL:  "NIL",
+            MACR: "MACR",
+            BOX:  "BOX",
             }
 
     def __init__(self, val):
