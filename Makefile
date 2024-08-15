@@ -1,9 +1,9 @@
 
-NM = nm
+NM ?= nm
 export NM
-MAKE = make
+MAKE ?= make
 export MAKE
-CFLAGS = -Wall -Wextra -g -Isrc
+CFLAGS ?= -Wall -Wextra -g -Isrc
 export CFLAGS
 
 

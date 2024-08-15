@@ -13,7 +13,7 @@ elf-y := $(addprefix $(subdir)/,$(elf-y))
 all: $(elf-y)
 
 $(elf-y): $(src)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) $^ -o $@
 
 %.s: %.c
 	$(CC) $(CFLAGS) -S -fverbose-asm $< -o $@
