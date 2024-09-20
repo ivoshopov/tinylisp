@@ -58,8 +58,11 @@ lexp f_set_box(lexp t, lexp e) {
         arg = car(cdr(t));
         t = car(t);
         if( typof(t) == BOX ) {
-                if( ord(arg) < ord(env) )
-                        return mk_error("Argument isn't in the global envirment", t);
+                if( typof(arg) == CONS
+                                || typof(arg) == CLOS
+                                || typof(arg) == MACR )
+                        if( ord(arg) < ord(env) )
+                                return mk_error("Argument isn't in the global envirment", t);
                 cell[ord(t)+1] = arg;
                 return nil;
         } else
