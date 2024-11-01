@@ -479,7 +479,7 @@ void gc() {
 }
 
 /* Lisp initialization and REPL */
-int main() {
+int repl() {
   iobj i;
   struct module *mod_iter = &__start_modules;
   struct primitive *prim_iter = &__start_primitives;
