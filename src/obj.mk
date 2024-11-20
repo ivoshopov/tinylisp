@@ -6,4 +6,5 @@ obj-$(CONFIG_PRIM_ENV) += module/env.o
 obj-$(CONFIG_BOXES_ARRAY) += module/boxes/array.o
 obj-$(CONFIG_BOXES_STACK) += module/boxes/stack.o
 obj-$(CONFIG_MAIN) += main.o
-elf-y += tinylisp
+elf-$(CONFIG_DO_ELF) += tinylisp
+lib-$(CONFIG_DO_LIB) += libtinylisp.a

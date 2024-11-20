@@ -3,8 +3,10 @@ NM ?= nm
 export NM
 MAKE ?= make
 export MAKE
-CFLAGS ?= -Wall -Wextra -g -Isrc
+CFLAGS ?= -Wall -Wextra -g
 export CFLAGS
+CPPFLAGS += -Isrc
+export CPPFLAGS
 
 
 subdirs := src

@@ -10,13 +10,19 @@ obj-y := $(addprefix $(subdir)/,$(obj-y))
 src = $(obj-y:.o=.c)
 elf-y := $(addprefix $(subdir)/,$(elf-y))
 
-all: $(elf-y)
+all: $(elf-y) $(lib-y)
 
 $(elf-y): $(src)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $^ -o $@
 
+$(lib-y): $(obj-y)
+	$(AR) rcs $@ $^
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
 %.s: %.c
-	$(CC) $(CFLAGS) -S -fverbose-asm $< -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) -S -fverbose-asm $< -o $@
 
 %.lst: %.s
 	$(AS) -alhnd $< > $@
@@ -27,6 +33,7 @@ $(elf-y).sym: $(elf-y)
 clean:
 	-rm $(elf-y)
 	-rm $(elf-y).sym
+	-rm $(lib-y)
 	-rm $(subdir)/*.lst
 	-rm $(subdir)/*.s
 	-rm $(obj-y)
