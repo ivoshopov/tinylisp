@@ -397,7 +397,7 @@ char scan() {
 
 /* return the Lisp expression read from standard input */
 lexp parse();
-lexp read() {
+lexp _read() {
   scan();
   return parse();
 }
@@ -408,7 +408,7 @@ lexp list() {
   if (scan() == ')')
     return nil;
   if (!strcmp(buf, ".")) {
-    x = read();
+    x = _read();
     scan();
     return x;
   }
@@ -418,7 +418,7 @@ lexp list() {
 
 /* return a parsed Lisp expression x quoted as (quote x) */
 lexp quote() {
-  return cons(atom("quote"), cons(read(), nil));
+  return cons(atom("quote"), cons(_read(), nil));
 }
 
 /* return a parsed atomic Lisp expression (a number or an atom) */
@@ -494,7 +494,7 @@ int repl() {
   for (i = 0; prim_iter < &__stop_primitives; ++i, ++prim_iter)
     env = pair(atom(prim_iter->s), box(PRIM, i), env);
   while (1) {
-    print(eval(read(), env));
+    print(eval(_read(), env));
     gc();
     printf("\n");
   }
