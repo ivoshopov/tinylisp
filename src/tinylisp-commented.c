@@ -314,6 +314,10 @@ lexp bind(lexp v, lexp t, lexp e) {
 
 /* apply closure f to arguments t in environemt e */
 lexp reduce(lexp f, lexp t, lexp e) {
+  /* for more info read SICP - Envirnment model
+     https://www.youtube.com/watch?v=SDsxFreEYsc&list=PL7BcsI5ueSNFPCEisbaoQ0kXIDX9rR5FF */
+  /* car(car(f)) is lambda local parameters
+     cdr(car(f)) is lambda body */
   return eval(cdr(car(f)), bind(car(car(f)), evlis(t, e), not(cdr(f)) ? env : cdr(f)));
 }
 
@@ -332,9 +336,14 @@ lexp apply(lexp f, lexp t, lexp e) {
 
 /* evaluate x and return its value in environment e */
 lexp _eval(lexp x, lexp e) {
+  /* First we check does the lisp expression is an ATOM. If we call the eval
+     with "#t" or "car" or some other symbol we search for an association in
+     the environment. Later we test does we have an expression made by CONS (a
+     list of expressions,symbols or numbers). Finally if the x isn't ATOM or
+     CONS we return x since a number evaluate to itself. */
   return typof(x) == ATOM ? assoc(x, e) :
          typof(x) == CONS ? apply(eval(car(x), e), cdr(x), e) :
-         x;
+         x;	/* in case we eval a number it lead to it self */
 }
 
 #if CONFIG_TRACE
