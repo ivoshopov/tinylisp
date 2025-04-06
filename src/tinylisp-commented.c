@@ -10,6 +10,7 @@
 #include <module/error/mk_error.h>
 #include <unused.h>
 #include <primitive.h>
+#include <assert.h>
 
 
 /* we only need two types to implement a Lisp interpreter:
@@ -369,65 +370,9 @@ inline lexp eval(lexp x,lexp e) {
 /* tokenization buffer and the next character that we are looking at */
 char buf[40], see = ' ';
 
-/* advance to the next character */
-void look() {
-  int c = getchar();
-  see = c;
-  if (c == EOF)
-    exit(0);
-}
-
 /* return nonzero if we are looking at character c, ' ' means any white space */
 bool seeing(char c) {
   return c == ' ' ? see > 0 && see <= c : see == c;
-}
-
-/* return the look ahead character from standard input, advance to the next */
-char get() {
-  char c = see;
-  look();
-  return c;
-}
-
-/* tokenize into buf[], return first character of buf[] */
-char scan() {
-  iobj i = 0;
-  while (seeing(' '))
-    look();
-  if (seeing('(') || seeing(')') || seeing('\''))
-    buf[i++] = get();
-  else
-    do
-      buf[i++] = get();
-    while (i < 39 && !seeing('(') && !seeing(')') && !seeing(' '));
-  buf[i] = 0;
-  return *buf;
-}
-
-/* return the Lisp expression read from standard input */
-lexp parse();
-lexp _read() {
-  scan();
-  return parse();
-}
-
-/* return a parsed Lisp list */
-lexp list() {
-  lexp x;
-  if (scan() == ')')
-    return nil;
-  if (!strcmp(buf, ".")) {
-    x = _read();
-    scan();
-    return x;
-  }
-  x = parse();
-  return cons(x, list());
-}
-
-/* return a parsed Lisp expression x quoted as (quote x) */
-lexp quote() {
-  return cons(atom("quote"), cons(_read(), nil));
 }
 
 /* return a parsed atomic Lisp expression (a number or an atom) */
@@ -437,50 +382,218 @@ lexp atomic() {
          atom(buf);
 }
 
-/* return a parsed Lisp expression */
-lexp parse() {
-  return *buf == '(' ? list() :
-         *buf == '\'' ? quote() :
-         atomic();
+
+
+struct io_primitive {
+  int (*read) ();
+  int (*write) (char p);
+};
+
+struct io_typ {
+  /* The name of the protocol. There is one to one matching between protocol
+   * name and read/write function */
+  char *proto;
+  /* TODO: add memomry manager as parameter to read function
+   * (like: lexp (*read) (struct io_primitive *port, struct mm_typ *heap); )
+   * This way we can control which memory will be used for construction of
+   * s-expr that will be evaluated. */
+  lexp (*read) (struct io_typ *port);
+  lexp (*write) (struct io_typ *port, lexp sexp);
+  void *private;
+};
+
+/* Call a function for each char of a string. */
+int str_for_each(const char *str, int (*func)(char p) )
+{
+  for( ; *str != '\0'; str++ ) {
+    int rc = func(*str);
+    if ( rc != 0 )
+      return rc;
+  }
+  return 0;
 }
 
+
+lexp stream_write(struct io_primitive *port, lexp);
+
 /* display a Lisp list t */
-void print(lexp);
-void printlist(lexp t) {
-  for (putchar('('); ; putchar(' ')) {
-    print(car(t));
+void printlist(struct io_primitive *port, lexp t) {
+  for (port->write('('); ; port->write(' ')) {
+    stream_write(port, car(t));
     t = cdr(t);
     if (typof(t) == NIL)
       break;
     if (typof(t) != CONS) {
-      printf(" . ");
-      print(t);
+      str_for_each(" . ", port->write);
+      stream_write(port, t);
       break;
     }
   }
-  putchar(')');
+  port->write(')');
 }
 
-/* display a Lisp expression x */
-void print(lexp x) {
-  struct primitive *prim = &__start_primitives;
-  if (typof(x) == NIL)
-    printf("()");
-  else if (typof(x) == ATOM)
-    printf("%s", A+ord(x));
-  else if (typof(x) == PRIM)
-    printf("<%s>", prim[ord(x)].s);
-  else if (typof(x) == CONS)
-    printlist(x);
-  else if (typof(x) == CLOS)
-    printf("{%u}", ord(x));
-  else if (typof(x) == MACR)
-    printf("[%u]", ord(x));
-  else if (typof(x) == BOX)
-    printf("(box[%u])", ord(x));
-  else
-    printf("%"NUM_FMT, x);
+int hsptyp_to_str(hsptyp n, char *str, size_t strsz){
+  int rc = snprintf( str, strsz, "%u", n );
+  if ( rc > 0 && rc < (int)strsz )
+    return 0;
+  return -1;
 }
+
+int num_to_str(lexp n, char *str, size_t strsz){
+  int rc = snprintf( str, strsz, "%"NUM_FMT, n );
+  if ( rc > 0 && rc < (int)strsz )
+    return 0;
+  return -1;
+}
+
+
+/* display a Lisp expression x */
+lexp stream_write(struct io_primitive *port, lexp x) {
+  char indx_str[MAX_HSPTYP_STR];
+  char num_str[MAX_DOUBLE_STR];
+  struct primitive *prim = &__start_primitives;
+  if (typof(x) == NIL) {
+    /* TODO: check for error */
+    str_for_each("()", port->write);
+  } else if (typof(x) == ATOM) {
+    /* TODO: check for error */
+    str_for_each(A+ord(x), port->write);
+  } else if (typof(x) == PRIM) {
+    port->write('<');
+    /* TODO: check for error */
+    str_for_each(prim[ord(x)].s, port->write);
+    port->write('>');
+  } else if (typof(x) == CONS) {
+    printlist(port, x);
+  } else if (typof(x) == CLOS) {
+    port->write('{');
+    /* TODO: check for error */
+    hsptyp_to_str(ord(x), indx_str, sizeof(indx_str));
+    /* TODO: check for error */
+    str_for_each(indx_str, port->write);
+    port->write('}');
+  } else if (typof(x) == MACR) {
+    port->write('[');
+    /* TODO: check for error */
+    hsptyp_to_str(ord(x), indx_str, sizeof(indx_str));
+    /* TODO: check for error */
+    str_for_each(indx_str, port->write);
+    port->write(']');
+  } else if (typof(x) == BOX) {
+    str_for_each("(box[", port->write);
+    /* TODO: check for error */
+    hsptyp_to_str(ord(x), indx_str, sizeof(indx_str));
+    /* TODO: check for error */
+    str_for_each(indx_str, port->write);
+    str_for_each("])", port->write);
+  } else {
+    num_to_str(x, num_str, sizeof(num_str));
+    str_for_each(num_str, port->write);
+  }
+  return nil;
+}
+
+
+
+
+/* advance to the next character */
+void look(struct io_primitive *port) {
+  int c = port->read();
+  see = c;
+  if (c == EOF)
+    exit(0);
+}
+
+/* return the look ahead character from standard input, advance to the next */
+char get(struct io_primitive *port) {
+  char c = see;
+  look(port);
+  return c;
+}
+
+/* tokenize into buf[], return first character of buf[] */
+char scan(struct io_primitive *port) {
+  iobj i = 0;
+  while (seeing(' '))
+    look(port);
+  if (seeing('(') || seeing(')') || seeing('\''))
+    buf[i++] = get(port);
+  else
+    do
+      buf[i++] = get(port);
+    while (i < 39 && !seeing('(') && !seeing(')') && !seeing(' '));
+  buf[i] = 0;
+  return *buf;
+}
+
+lexp stream_read(struct io_primitive *port);
+lexp parse(struct io_primitive *port);
+
+/* return a parsed Lisp list */
+lexp list(struct io_primitive *port) {
+  lexp x;
+  if (scan(port) == ')')
+    return nil;
+  if (!strcmp(buf, ".")) {
+    x = stream_read(port);
+    scan(port);
+    return x;
+  }
+  x = parse(port);
+  return cons(x, list(port));
+}
+
+
+/* return a parsed Lisp expression x quoted as (quote x) */
+lexp quote(struct io_primitive *port) {
+  return cons(atom("quote"), cons(stream_read(port), nil));
+}
+
+
+/* return a parsed Lisp expression */
+lexp parse(struct io_primitive *port) {
+  return *buf == '(' ? list(port) :
+         *buf == '\'' ? quote(port) :
+         atomic(port);
+}
+
+
+/* Deserialize character stream to lisp expression */
+/* Allocate memory and return lisp expression in it. */
+lexp stream_read(struct io_primitive *port) {
+  scan(port);
+  return parse(port);
+}
+
+int stdout_write(char c) {
+  if (putchar((char)c) != EOF)
+    return 0;
+  /* TODO: we need user readable error code, -1 isn't understandable */
+  return -1;
+}
+
+lexp std_write(struct io_typ *port, lexp exp) {
+  struct io_primitive *port_primitive = port->private;
+  assert( strcmp( port->proto, "std") == 0 );
+  exp = stream_write(port_primitive, exp);
+  port_primitive->write('\n');
+  return exp;
+}
+
+lexp std_read(struct io_typ *port) {
+  struct io_primitive *port_primitive = port->private;
+  assert( strcmp( port->proto, "std") == 0 );
+  return stream_read(port_primitive);
+}
+
+lexp lexp_write(struct io_typ *port, lexp exp) {
+  return port->write(port, exp);
+}
+
+lexp lexp_read(struct io_typ *port) {
+  return port->read(port);
+}
+
 
 /* garbage collection removes temporary cells, keeps global environment */
 void gc() {
@@ -488,10 +601,12 @@ void gc() {
 }
 
 /* Lisp initialization and REPL */
-int repl() {
+int repl(void) {
   iobj i;
   struct module *mod_iter = &__start_modules;
   struct primitive *prim_iter = &__start_primitives;
+  struct io_typ port;
+  struct io_primitive stdio;
   nil = box(NIL, 0);
 
   // Initialization of modules
@@ -502,9 +617,16 @@ int repl() {
   env = pair(tru, tru, nil);
   for (i = 0; prim_iter < &__stop_primitives; ++i, ++prim_iter)
     env = pair(atom(prim_iter->s), box(PRIM, i), env);
+  stdio.read = getchar;
+  stdio.write = stdout_write;
+  port.private = &stdio;
+  port.read = std_read;
+  port.write = std_write;
+  /* the "std" protocol will behave like interactive interpreter */
+  port.proto = "std";
   while (1) {
-    print(eval(_read(), env));
+    /* TODO: handle an error from the write call */
+    lexp_write(&port, eval(lexp_read(&port), env));
     gc();
-    printf("\n");
   }
 }
