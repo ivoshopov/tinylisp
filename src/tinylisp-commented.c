@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <lexp.h>
+#include <io.h>
 #include <module/module.h>
 #include <module/error/mk_error.h>
 #include <unused.h>
@@ -62,6 +63,11 @@ lexp atom(const char *s) {
       abort();
   }
   return box(ATOM, i);
+}
+
+char* unbox_atom(lexp atom) {
+  assert( typof(atom) == ATOM );
+  return (char*)cell + ord(atom);
 }
 
 /* construct pair (x . y) returns a NaN-boxed CONS */
@@ -389,18 +395,6 @@ struct io_primitive {
   int (*write) (char p);
 };
 
-struct io_typ {
-  /* The name of the protocol. There is one to one matching between protocol
-   * name and read/write function */
-  char *proto;
-  /* TODO: add memomry manager as parameter to read function
-   * (like: lexp (*read) (struct io_primitive *port, struct mm_typ *heap); )
-   * This way we can control which memory will be used for construction of
-   * s-expr that will be evaluated. */
-  lexp (*read) (struct io_typ *port);
-  lexp (*write) (struct io_typ *port, lexp sexp);
-  void *private;
-};
 
 /* Call a function for each char of a string. */
 int str_for_each(const char *str, int (*func)(char p) )
@@ -457,7 +451,7 @@ lexp stream_write(struct io_primitive *port, lexp x) {
     str_for_each("()", port->write);
   } else if (typof(x) == ATOM) {
     /* TODO: check for error */
-    str_for_each(A+ord(x), port->write);
+    str_for_each(unbox_atom(x), port->write);
   } else if (typof(x) == PRIM) {
     port->write('<');
     /* TODO: check for error */
@@ -594,6 +588,34 @@ lexp lexp_read(struct io_typ *port) {
   return port->read(port);
 }
 
+struct io_primitive stdio = {
+  .read = getchar,
+  .write = stdout_write,
+};
+
+/* the "std" protocol will behave like interactive interpreter */
+struct io_typ std = {
+  .private = &stdio,
+  .read = std_read,
+  .write = std_write,
+  .proto = "std",
+};
+
+struct io_typ *ports[] = {
+  &std,
+};
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+struct io_typ* get_port(const char *name) {
+  struct io_typ *p;
+  for ( unsigned int i = 0; i < ARRAY_SIZE(ports); i++ ) {
+    p = ports[i];
+    if ( strcmp(p->proto, name) == 0 )
+      return p;
+  }
+  return NULL;
+}
 
 /* garbage collection removes temporary cells, keeps global environment */
 void gc() {
@@ -605,8 +627,7 @@ int repl(void) {
   iobj i;
   struct module *mod_iter = &__start_modules;
   struct primitive *prim_iter = &__start_primitives;
-  struct io_typ port;
-  struct io_primitive stdio;
+  struct io_typ *default_port = ports[0];
   nil = box(NIL, 0);
 
   // Initialization of modules
@@ -617,16 +638,9 @@ int repl(void) {
   env = pair(tru, tru, nil);
   for (i = 0; prim_iter < &__stop_primitives; ++i, ++prim_iter)
     env = pair(atom(prim_iter->s), box(PRIM, i), env);
-  stdio.read = getchar;
-  stdio.write = stdout_write;
-  port.private = &stdio;
-  port.read = std_read;
-  port.write = std_write;
-  /* the "std" protocol will behave like interactive interpreter */
-  port.proto = "std";
   while (1) {
     /* TODO: handle an error from the write call */
-    lexp_write(&port, eval(lexp_read(&port), env));
+    lexp_write(default_port, eval(lexp_read(default_port), env));
     gc();
   }
 }
