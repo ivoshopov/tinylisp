@@ -390,10 +390,6 @@ lexp atomic() {
 
 
 
-struct io_primitive {
-  int (*read) ();
-  int (*write) (char p);
-};
 
 
 /* Call a function for each char of a string. */
@@ -552,33 +548,13 @@ lexp parse(struct io_primitive *port) {
 }
 
 
-/* Deserialize character stream to lisp expression */
+/* Deserialize character stream to a lisp expression */
 /* Allocate memory and return lisp expression in it. */
 lexp stream_read(struct io_primitive *port) {
   scan(port);
   return parse(port);
 }
 
-int stdout_write(char c) {
-  if (putchar((char)c) != EOF)
-    return 0;
-  /* TODO: we need user readable error code, -1 isn't understandable */
-  return -1;
-}
-
-lexp std_write(struct io_typ *port, lexp exp) {
-  struct io_primitive *port_primitive = port->private;
-  assert( strcmp( port->proto, "std") == 0 );
-  exp = stream_write(port_primitive, exp);
-  port_primitive->write('\n');
-  return exp;
-}
-
-lexp std_read(struct io_typ *port) {
-  struct io_primitive *port_primitive = port->private;
-  assert( strcmp( port->proto, "std") == 0 );
-  return stream_read(port_primitive);
-}
 
 lexp lexp_write(struct io_typ *port, lexp exp) {
   return port->write(port, exp);
@@ -588,31 +564,15 @@ lexp lexp_read(struct io_typ *port) {
   return port->read(port);
 }
 
-struct io_primitive stdio = {
-  .read = getchar,
-  .write = stdout_write,
-};
 
-/* the "std" protocol will behave like interactive interpreter */
-struct io_typ std = {
-  .private = &stdio,
-  .read = std_read,
-  .write = std_write,
-  .proto = "std",
-};
-
-struct io_typ *ports[] = {
-  &std,
-};
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 struct io_typ* get_port(const char *name) {
-  struct io_typ *p;
-  for ( unsigned int i = 0; i < ARRAY_SIZE(ports); i++ ) {
-    p = ports[i];
-    if ( strcmp(p->proto, name) == 0 )
-      return p;
+  struct io_typ *port_iter = &__start_ports;
+  for ( ; port_iter < &__stop_ports; ++port_iter) {
+    if ( strcmp(port_iter->proto, name) == 0 )
+      return port_iter;
   }
   return NULL;
 }
@@ -627,7 +587,7 @@ int repl(void) {
   iobj i;
   struct module *mod_iter = &__start_modules;
   struct primitive *prim_iter = &__start_primitives;
-  struct io_typ *default_port = ports[0];
+  struct io_typ *default_port = get_port("std");
   nil = box(NIL, 0);
 
   // Initialization of modules

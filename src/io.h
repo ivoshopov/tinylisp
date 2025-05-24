@@ -13,5 +13,14 @@ struct io_typ {
   void *private;
 };
 
+struct io_primitive {
+  int (*read) ();
+  int (*write) (char p);
+};
 
-extern struct io_typ *ports[];
+
+#define PORTS_SECTION __attribute__((section("ports")))
+
+// Begin and end of port list (the linker initialize them)
+extern struct io_typ __start_ports;
+extern struct io_typ __stop_ports;
