@@ -3,7 +3,7 @@ ifeq ($(subdir),)
 $(error Error: The subdir must not be empty. It should be either "." or a path to the source code subdirectory.)
 endif
 
--include .config
+include .config
 -include $(subdir)/obj.mk
 
 obj-y := $(addprefix $(subdir)/,$(obj-y))
@@ -11,6 +11,11 @@ src = $(obj-y:.o=.c)
 elf-y := $(addprefix $(subdir)/,$(elf-y))
 
 all: $(elf-y) $(lib-y)
+
+# In case no one have configure the build system we will take the default
+# configuration
+.config: defconfig
+	cp $< $@
 
 $(elf-y): $(src)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $^ -o $@
@@ -37,6 +42,7 @@ clean:
 	-rm $(subdir)/*.lst
 	-rm $(subdir)/*.s
 	-rm $(obj-y)
+	-rm .config
 
 
 test:
