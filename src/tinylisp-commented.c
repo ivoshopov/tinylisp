@@ -587,7 +587,7 @@ int repl(void) {
   iobj i;
   struct module *mod_iter = &__start_modules;
   struct primitive *prim_iter = &__start_primitives;
-  struct io_typ *default_port = get_port("std");
+  struct io_typ *default_port = get_port(CONFIG_DEFAULT_PORT);
   nil = box(NIL, 0);
 
   // Initialization of modules

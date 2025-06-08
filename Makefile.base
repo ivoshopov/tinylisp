@@ -17,13 +17,20 @@ all: $(elf-y) $(lib-y)
 .config: defconfig
 	cp $< $@
 
-$(elf-y): $(src)
+config.h: .config
+	sed -e "/^#/d" \
+		-e "s/=y/=1/" \
+		-e "s/^\([A-Z_]*\)=\(.*\)$$/#define \1 \2/" $< > $@
+
+# TODO: dependency between .c files and .h should be generated automatically.
+$(elf-y): $(src) config.h
 	$(CC) $(CFLAGS) $(CPPFLAGS) $^ -o $@
 
 $(lib-y): $(obj-y)
 	$(AR) rcs $@ $^
 
-%.o: %.c
+# TODO: dependency between .c files and .h should be generated automatically.
+%.o: %.c config.h
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 %.s: %.c
@@ -42,6 +49,7 @@ clean:
 	-rm $(subdir)/*.lst
 	-rm $(subdir)/*.s
 	-rm $(obj-y)
+	-rm config.h
 	-rm .config
 
 

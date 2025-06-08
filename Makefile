@@ -5,7 +5,7 @@ MAKE ?= make
 export MAKE
 CFLAGS ?= -Wall -Wextra -g
 export CFLAGS
-CPPFLAGS += -Isrc
+CPPFLAGS += -Isrc --include config.h
 export CPPFLAGS
 
 
