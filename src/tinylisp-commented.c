@@ -557,10 +557,14 @@ lexp stream_read(struct io_primitive *port) {
 
 
 lexp lexp_write(struct io_typ *port, lexp exp) {
+  if ( port->write == NULL )
+    return mk_error("The port could not be written:", nil);
   return port->write(port, exp);
 }
 
 lexp lexp_read(struct io_typ *port) {
+  if ( port->read == NULL )
+    return mk_error("The port could not be read:", nil);
   return port->read(port);
 }
 
