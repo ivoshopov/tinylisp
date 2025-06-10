@@ -404,22 +404,22 @@ int str_for_each(const char *str, int (*func)(char p) )
 }
 
 
-lexp stream_write(struct io_primitive *port, lexp);
+lexp stream_write(struct io_primitive *stream, lexp);
 
 /* display a Lisp list t */
-void printlist(struct io_primitive *port, lexp t) {
-  for (port->write('('); ; port->write(' ')) {
-    stream_write(port, car(t));
+void printlist(struct io_primitive *stream, lexp t) {
+  for (stream->write('('); ; stream->write(' ')) {
+    stream_write(stream, car(t));
     t = cdr(t);
     if (typof(t) == NIL)
       break;
     if (typof(t) != CONS) {
-      str_for_each(" . ", port->write);
-      stream_write(port, t);
+      str_for_each(" . ", stream->write);
+      stream_write(stream, t);
       break;
     }
   }
-  port->write(')');
+  stream->write(')');
 }
 
 int hsptyp_to_str(hsptyp n, char *str, size_t strsz){
@@ -438,47 +438,47 @@ int num_to_str(lexp n, char *str, size_t strsz){
 
 
 /* display a Lisp expression x */
-lexp stream_write(struct io_primitive *port, lexp x) {
+lexp stream_write(struct io_primitive *stream, lexp x) {
   char indx_str[MAX_HSPTYP_STR];
   char num_str[MAX_DOUBLE_STR];
   struct primitive *prim = &__start_primitives;
   if (typof(x) == NIL) {
     /* TODO: check for error */
-    str_for_each("()", port->write);
+    str_for_each("()", stream->write);
   } else if (typof(x) == ATOM) {
     /* TODO: check for error */
-    str_for_each(unbox_atom(x), port->write);
+    str_for_each(unbox_atom(x), stream->write);
   } else if (typof(x) == PRIM) {
-    port->write('<');
+    stream->write('<');
     /* TODO: check for error */
-    str_for_each(prim[ord(x)].s, port->write);
-    port->write('>');
+    str_for_each(prim[ord(x)].s, stream->write);
+    stream->write('>');
   } else if (typof(x) == CONS) {
-    printlist(port, x);
+    printlist(stream, x);
   } else if (typof(x) == CLOS) {
-    port->write('{');
+    stream->write('{');
     /* TODO: check for error */
     hsptyp_to_str(ord(x), indx_str, sizeof(indx_str));
     /* TODO: check for error */
-    str_for_each(indx_str, port->write);
-    port->write('}');
+    str_for_each(indx_str, stream->write);
+    stream->write('}');
   } else if (typof(x) == MACR) {
-    port->write('[');
+    stream->write('[');
     /* TODO: check for error */
     hsptyp_to_str(ord(x), indx_str, sizeof(indx_str));
     /* TODO: check for error */
-    str_for_each(indx_str, port->write);
-    port->write(']');
+    str_for_each(indx_str, stream->write);
+    stream->write(']');
   } else if (typof(x) == BOX) {
-    str_for_each("(box[", port->write);
+    str_for_each("(box[", stream->write);
     /* TODO: check for error */
     hsptyp_to_str(ord(x), indx_str, sizeof(indx_str));
     /* TODO: check for error */
-    str_for_each(indx_str, port->write);
-    str_for_each("])", port->write);
+    str_for_each(indx_str, stream->write);
+    str_for_each("])", stream->write);
   } else {
     num_to_str(x, num_str, sizeof(num_str));
-    str_for_each(num_str, port->write);
+    str_for_each(num_str, stream->write);
   }
   return nil;
 }
@@ -487,72 +487,72 @@ lexp stream_write(struct io_primitive *port, lexp x) {
 
 
 /* advance to the next character */
-void look(struct io_primitive *port) {
-  int c = port->read();
+void look(struct io_primitive *stream) {
+  int c = stream->read();
   see = c;
   if (c == EOF)
     exit(0);
 }
 
 /* return the look ahead character from standard input, advance to the next */
-char get(struct io_primitive *port) {
+char get(struct io_primitive *stream) {
   char c = see;
-  look(port);
+  look(stream);
   return c;
 }
 
 /* tokenize into buf[], return first character of buf[] */
-char scan(struct io_primitive *port) {
+char scan(struct io_primitive *stream) {
   iobj i = 0;
   while (seeing(' '))
-    look(port);
+    look(stream);
   if (seeing('(') || seeing(')') || seeing('\''))
-    buf[i++] = get(port);
+    buf[i++] = get(stream);
   else
     do
-      buf[i++] = get(port);
+      buf[i++] = get(stream);
     while (i < 39 && !seeing('(') && !seeing(')') && !seeing(' '));
   buf[i] = 0;
   return *buf;
 }
 
-lexp stream_read(struct io_primitive *port);
-lexp parse(struct io_primitive *port);
+lexp stream_read(struct io_primitive *stream);
+lexp parse(struct io_primitive *stream);
 
 /* return a parsed Lisp list */
-lexp list(struct io_primitive *port) {
+lexp list(struct io_primitive *stream) {
   lexp x;
-  if (scan(port) == ')')
+  if (scan(stream) == ')')
     return nil;
   if (!strcmp(buf, ".")) {
-    x = stream_read(port);
-    scan(port);
+    x = stream_read(stream);
+    scan(stream);
     return x;
   }
-  x = parse(port);
-  return cons(x, list(port));
+  x = parse(stream);
+  return cons(x, list(stream));
 }
 
 
 /* return a parsed Lisp expression x quoted as (quote x) */
-lexp quote(struct io_primitive *port) {
-  return cons(atom("quote"), cons(stream_read(port), nil));
+lexp quote(struct io_primitive *stream) {
+  return cons(atom("quote"), cons(stream_read(stream), nil));
 }
 
 
 /* return a parsed Lisp expression */
-lexp parse(struct io_primitive *port) {
-  return *buf == '(' ? list(port) :
-         *buf == '\'' ? quote(port) :
-         atomic(port);
+lexp parse(struct io_primitive *stream) {
+  return *buf == '(' ? list(stream) :
+         *buf == '\'' ? quote(stream) :
+         atomic(stream);
 }
 
 
 /* Deserialize character stream to a lisp expression */
 /* Allocate memory and return lisp expression in it. */
-lexp stream_read(struct io_primitive *port) {
-  scan(port);
-  return parse(port);
+lexp stream_read(struct io_primitive *stream) {
+  scan(stream);
+  return parse(stream);
 }
 
 

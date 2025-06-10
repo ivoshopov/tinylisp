@@ -13,6 +13,9 @@ struct io_typ {
   void *private;
 };
 
+/* A character stream type
+ * It is used for reading and writing of char stream while we
+ * serialize/deserialize lisp expressions. */
 struct io_primitive {
   int (*read) ();
   int (*write) (char p);
