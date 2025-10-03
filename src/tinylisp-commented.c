@@ -501,13 +501,14 @@ lexp stream_write(struct io_primitive *stream, lexp x) {
 
 
 
-
 /* advance to the next character */
 void look(struct io_primitive *stream) {
   int c = stream->read();
   see = c;
-  if (c == EOF)
+  if (c == EOF) {
+    printf("Exit since EOF reached\n");
     exit(0);
+  }
 }
 
 /* return the look ahead character from standard input, advance to the next */

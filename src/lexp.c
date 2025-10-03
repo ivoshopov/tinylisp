@@ -1,5 +1,20 @@
 #include "lexp.h"
 
+/*
+ *Bit index:  63                                                     0
+ *            +----+-------------------+----------------------------------------------+
+ *            | S  |     Exponent      |                Fraction (Mantissa)           |
+ *            +----+-------------------+----------------------------------------------+
+ *            | 1b |       11b         |                     52b                      |
+ *            +----+-------------------+----------------------------------------------+
+ *
+ *    S = sign bit
+ *
+ *    Exponent = unsigned with bias = 1023
+ *
+ *    Fraction = 52 fraction bits (the hidden leading bit depends on exponent)
+ */
+
 /* atom, primitive, cons, closure and nil tags for NaN boxing */
 ttyp ATOM = 0x7ff8, PRIM = 0x7ff9, CONS = 0x7ffa, CLOS = 0x7ffb, NIL = 0x7ffc, MACR = 0x7ffd, BOX = 0x7ffe, ERR = 0x7fff;
 

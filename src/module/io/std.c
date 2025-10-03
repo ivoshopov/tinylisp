@@ -6,7 +6,7 @@ static int stdout_write(char c) {
   if (putchar((char)c) != EOF)
     return 0;
   /* TODO: we need user readable error code, -1 isn't understandable */
-  return -1;
+  return EOF;
 }
 
 
