@@ -45,7 +45,7 @@ hsptyp sp = N;
 /* cell[N] array of Lisp expressions, shared by the stack and atom heap */
 lexp cell[N];
 
-/* Lisp constant expressions () (nil), #t, ERR, and the global environment env */
+/* Lisp constant expressions () (nil), #t, and the global environment env */
 lexp nil, tru, env;
 
 lexp num(lexp n) {
@@ -68,6 +68,17 @@ lexp atom(const char *s) {
 char* unbox_atom(lexp atom) {
   assert( typof(atom) == ATOM );
   return (char*)cell + ord(atom);
+}
+
+lexp err(lexp err_msg) {
+  assert( typof(err_msg) == CONS );
+  /* We are going to wrap err_msg in the ERR type */
+  return box(ERR, ord(err_msg));
+}
+
+lexp unbox_err(lexp err) {
+  assert( typof(err) == ERR );
+  return box(CONS, ord(err));
 }
 
 /* construct pair (x . y) returns a NaN-boxed CONS */
@@ -374,11 +385,12 @@ inline lexp eval(lexp x,lexp e) {
 #endif /* CONFIG_TRACE */
 
 /* tokenization buffer and the next character that we are looking at */
-char buf[40], see = ' ';
+char buf[40];
+static char see = ' ';
 
 /* return nonzero if we are looking at character c, ' ' means any white space */
 bool seeing(char c) {
-  return c == ' ' ? see > 0 && see <= c : see == c;
+  return c == ' ' ? see <= c : see == c;
 }
 
 /* return a parsed atomic Lisp expression (a number or an atom) */
@@ -476,6 +488,10 @@ lexp stream_write(struct io_primitive *stream, lexp x) {
     /* TODO: check for error */
     str_for_each(indx_str, stream->write);
     str_for_each("])", stream->write);
+  } else if (typof(x) == ERR) {
+    str_for_each("(error ", stream->write);
+    printlist(stream, unbox_err(x));
+    str_for_each(")", stream->write);
   } else {
     num_to_str(x, num_str, sizeof(num_str));
     str_for_each(num_str, stream->write);

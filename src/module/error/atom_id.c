@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <unused.h>
 
+/* It is wrong to return ATOM as an error. This way we can not differentiate
+ * between error and normal ATOM return of some function. The error should be
+ * an unique type */
+
+
 lexp atom(const char *s);
 
 lexp _mk_error( char *file, int line, char *str, lexp contex )
