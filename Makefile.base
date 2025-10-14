@@ -27,6 +27,7 @@ $(elf-y): $(src) config.h
 	$(CC) $(CFLAGS) $(CPPFLAGS) $^ -o $@
 
 $(lib-y): $(obj-y)
+	-rm $@
 	$(AR) rcs $@ $^
 
 # TODO: dependency between .c files and .h should be generated automatically.
