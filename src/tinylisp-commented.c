@@ -365,15 +365,34 @@ lexp _eval(lexp x, lexp e) {
 }
 
 #if CONFIG_TRACE
+static struct io_typ *trace_port;
+static lexp trace_port_key;
+lexp lexp_write(struct io_typ *port, lexp exp);
+
+lexp trace_line(int indent, lexp line) {
+  line = cons(line, nil);
+  for (int i=indent; i>1; i--)
+    line = cons(atom("  "), line);
+  line = cons(sp, line);
+  line = cons(atom("trace"), line);
+  return line;
+}
+
 void print(lexp);
 lexp eval(lexp x,lexp e) {
   static int indent = 0;
   indent++;
   lexp y = _eval(x,e);
-  printf("%u: ",sp);
-  for (int i=indent; i>1; i--)
-    printf("  ");
-  print(x); printf(" => "); print(y); printf("\n");
+  if (trace_port != NULL) {
+    lexp line = cons(x, nil);
+    line = cons(atom("eval"), line);
+    line = trace_line(indent, line);
+    lexp_write(trace_port, line);
+
+    line = cons(y, nil);
+    line = trace_line(indent+1, line);
+    lexp_write(trace_port, line);
+  }
   indent--;
   return y;
 }
@@ -617,9 +636,17 @@ int repl(void) {
   }
   tru = atom("#t");
   env = pair(tru, tru, nil);
+#if CONFIG_TRACE
+  trace_port_key = atom("trace-port");
+  lexp trace_port_value = atom(CONFIG_DEFAULT_TRACE_PORT);
+  env = pair(trace_port_key, trace_port_value, env);
+#endif
   for (i = 0; prim_iter < &__stop_primitives; ++i, ++prim_iter)
     env = pair(atom(prim_iter->s), box(PRIM, i), env);
   while (1) {
+#if CONFIG_TRACE
+    trace_port = get_port(unbox_atom(assoc(trace_port_key, env)));
+#endif
     /* TODO: handle an error from the write call */
     lexp_write(default_port, eval(lexp_read(default_port), env));
     gc();
