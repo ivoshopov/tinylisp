@@ -1,11 +1,13 @@
 #include <io.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <unused.h>
 
 static char file[] = "(define file '(This is a test string))";
 static size_t pos = 0;
 
-static int file_read() {
+static int file_read(struct io_primitive *port) {
+  UNUSED(port);
   char c = file[pos];
   if (pos == sizeof(file))
     return EOF;

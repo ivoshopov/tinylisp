@@ -1,17 +1,23 @@
 #include <stdio.h>
 #include <io.h>
+#include <unused.h>
 
 
-static int stdout_write(char c) {
+static int stdout_write(struct io_primitive *port, char c) {
+  UNUSED(port);
   if (putchar((char)c) != EOF)
     return 0;
   /* TODO: we need user readable error code, -1 isn't understandable */
   return EOF;
 }
 
+static int stdin_read(struct io_primitive *port) {
+  UNUSED(port);
+  return getchar();
+}
 
 static struct io_primitive stdio = {
-  .read = getchar,
+  .read = stdin_read,
   .write = stdout_write,
 };
 
@@ -21,7 +27,7 @@ lexp stream_read(struct io_primitive *port);
 static lexp std_write(struct io_typ *port, lexp exp) {
   struct io_primitive *port_primitive = port->private;
   exp = stream_write(port_primitive, exp);
-  port_primitive->write('\n');
+  port_primitive->write(port_primitive, '\n');
   return exp;
 }
 

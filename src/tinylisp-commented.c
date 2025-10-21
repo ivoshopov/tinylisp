@@ -424,10 +424,10 @@ lexp atomic() {
 
 
 /* Call a function for each char of a string. */
-int str_for_each(const char *str, int (*func)(char p) )
+int str_for_each(const char *str, struct io_primitive *stream )
 {
   for( ; *str != '\0'; str++ ) {
-    int rc = func(*str);
+    int rc = stream->write(stream, *str);
     if ( rc != 0 )
       return rc;
   }
@@ -439,18 +439,18 @@ lexp stream_write(struct io_primitive *stream, lexp);
 
 /* display a Lisp list t */
 void printlist(struct io_primitive *stream, lexp t) {
-  for (stream->write('('); ; stream->write(' ')) {
+  for (stream->write(stream, '('); ; stream->write(stream, ' ')) {
     stream_write(stream, car(t));
     t = cdr(t);
     if (typof(t) == NIL)
       break;
     if (typof(t) != CONS) {
-      str_for_each(" . ", stream->write);
+      str_for_each(" . ", stream);
       stream_write(stream, t);
       break;
     }
   }
-  stream->write(')');
+  stream->write(stream, ')');
 }
 
 int hsptyp_to_str(hsptyp n, char *str, size_t strsz){
@@ -475,45 +475,45 @@ lexp stream_write(struct io_primitive *stream, lexp x) {
   struct primitive *prim = &__start_primitives;
   if (typof(x) == NIL) {
     /* TODO: check for error */
-    str_for_each("()", stream->write);
+    str_for_each("()", stream);
   } else if (typof(x) == ATOM) {
     /* TODO: check for error */
-    str_for_each(unbox_atom(x), stream->write);
+    str_for_each(unbox_atom(x), stream);
   } else if (typof(x) == PRIM) {
-    stream->write('<');
+    stream->write(stream, '<');
     /* TODO: check for error */
-    str_for_each(prim[ord(x)].s, stream->write);
-    stream->write('>');
+    str_for_each(prim[ord(x)].s, stream);
+    stream->write(stream, '>');
   } else if (typof(x) == CONS) {
     printlist(stream, x);
   } else if (typof(x) == CLOS) {
-    stream->write('{');
+    stream->write(stream, '{');
     /* TODO: check for error */
     hsptyp_to_str(ord(x), indx_str, sizeof(indx_str));
     /* TODO: check for error */
-    str_for_each(indx_str, stream->write);
-    stream->write('}');
+    str_for_each(indx_str, stream);
+    stream->write(stream, '}');
   } else if (typof(x) == MACR) {
-    stream->write('[');
+    stream->write(stream, '[');
     /* TODO: check for error */
     hsptyp_to_str(ord(x), indx_str, sizeof(indx_str));
     /* TODO: check for error */
-    str_for_each(indx_str, stream->write);
-    stream->write(']');
+    str_for_each(indx_str, stream);
+    stream->write(stream, ']');
   } else if (typof(x) == BOX) {
-    str_for_each("(box[", stream->write);
+    str_for_each("(box[", stream);
     /* TODO: check for error */
     hsptyp_to_str(ord(x), indx_str, sizeof(indx_str));
     /* TODO: check for error */
-    str_for_each(indx_str, stream->write);
-    str_for_each("])", stream->write);
+    str_for_each(indx_str, stream);
+    str_for_each("])", stream);
   } else if (typof(x) == ERR) {
-    str_for_each("(error ", stream->write);
+    str_for_each("(error ", stream);
     printlist(stream, unbox_err(x));
-    str_for_each(")", stream->write);
+    str_for_each(")", stream);
   } else {
     num_to_str(x, num_str, sizeof(num_str));
-    str_for_each(num_str, stream->write);
+    str_for_each(num_str, stream);
   }
   return nil;
 }
@@ -522,7 +522,7 @@ lexp stream_write(struct io_primitive *stream, lexp x) {
 
 /* advance to the next character */
 void look(struct io_primitive *stream) {
-  int c = stream->read();
+  int c = stream->read(stream);
   see = c;
   if (c == EOF) {
     printf("Exit since EOF reached\n");
