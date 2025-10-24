@@ -2,3 +2,5 @@
 *.dSYM/
 *.swp
 __pycache__
+.config
+config.h
