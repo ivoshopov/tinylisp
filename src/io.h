@@ -19,6 +19,7 @@ struct io_typ {
 struct io_primitive {
   int (*read) (struct io_primitive *stream);
   int (*write) (struct io_primitive *stream, char p);
+  void *private;
 };
 
 

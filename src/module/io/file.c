@@ -3,21 +3,32 @@
 #include <stdio.h>
 #include <unused.h>
 
-static char file[] = "(define file '(This is a test string))";
-static size_t pos = 0;
+struct file_typ {
+  char *data;
+  size_t pos;
+  size_t size;
+};
 
-static int file_read(struct io_primitive *port) {
-  UNUSED(port);
-  char c = file[pos];
-  if (pos == sizeof(file))
+#define TESTFILE_STR "(define file '(This is a test string))"
+static struct file_typ testfile = {
+  .data = TESTFILE_STR,
+  .pos = 0,
+  .size = sizeof(TESTFILE_STR),
+};
+
+static int file_read(struct io_primitive *file) {
+  struct file_typ *fp = file->private;
+  char c = fp->data[fp->pos];
+  if (fp->pos == fp->size)
     return EOF;
-  pos++;
+  fp->pos++;
   return c;
 }
 
-static struct io_primitive file_io = {
+static struct io_primitive testfile_io = {
   .read = file_read,
   .write = NULL,
+  .private = (void*)&testfile,
 };
 
 lexp stream_read(struct io_primitive *port);
@@ -27,9 +38,9 @@ static lexp vfs_read(struct io_typ *port) {
   return stream_read(port_primitive);
 }
 
-PORTS_SECTION struct io_typ file_port = {
-  .private = &file_io,
+PORTS_SECTION struct io_typ testfile_port = {
+  .private = &testfile_io,
   .read = vfs_read,
   .write = NULL,
-  .proto = "file",
+  .proto = "testfile",
 };
