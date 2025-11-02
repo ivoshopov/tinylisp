@@ -1,46 +1,35 @@
-#include <io.h>
-#include <stddef.h>
+/* Single line ascii text buffer operation */
+
+#include <module/io/file.h>
 #include <stdio.h>
-#include <unused.h>
+#include <assert.h>
 
-struct file_typ {
-  char *data;
-  size_t pos;
-  size_t size;
-};
 
-#define TESTFILE_STR "(define file '(This is a test string))"
-static struct file_typ testfile = {
-  .data = TESTFILE_STR,
-  .pos = 0,
-  .size = sizeof(TESTFILE_STR),
-};
-
-static int file_read(struct io_primitive *file) {
+/* Read a char from a file */
+int file_read(struct io_primitive *file) {
   struct file_typ *fp = file->private;
+  assert(fp != NULL);
   char c = fp->data[fp->pos];
   if (fp->pos == fp->size)
     return EOF;
   fp->pos++;
+  /* When we reach the end of the string in the file we reset the pos pointer */
+  if (c == '\0' || c == '\n')
+    fp->pos = 0;
   return c;
 }
 
-static struct io_primitive testfile_io = {
-  .read = file_read,
-  .write = NULL,
-  .private = (void*)&testfile,
-};
 
-lexp stream_read(struct io_primitive *port);
-
-static lexp vfs_read(struct io_typ *port) {
-  struct io_primitive *port_primitive = port->private;
-  return stream_read(port_primitive);
+/* Write a char to a file */
+int file_write(struct io_primitive *file, char c) {
+  struct file_typ *fp = file->private;
+  assert(fp != NULL);
+  if (fp->pos == fp->size)
+    return EOF;
+  fp->data[fp->pos] = c;
+  fp->pos++;
+  /* When we reach the end of the string we reset the pos pointer */
+  if (c == '\0' || c == '\n')
+    fp->pos = 0;
+  return 0;
 }
-
-PORTS_SECTION struct io_typ testfile_port = {
-  .private = &testfile_io,
-  .read = vfs_read,
-  .write = NULL,
-  .proto = "testfile",
-};

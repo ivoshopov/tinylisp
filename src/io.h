@@ -1,3 +1,6 @@
+#ifndef __IO_H
+#define __IO_H
+
 #include <lexp.h>
 
 struct io_typ {
@@ -28,3 +31,5 @@ struct io_primitive {
 // Begin and end of port list (the linker initialize them)
 extern struct io_typ __start_ports;
 extern struct io_typ __stop_ports;
+
+#endif /* __IO_H */
