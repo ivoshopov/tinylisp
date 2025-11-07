@@ -6,6 +6,7 @@ obj-$(CONFIG_IO_FILE) += module/io/begin.lisp.o
 obj-$(CONFIG_IO_FILE) += module/io/tmpfile.o
 obj-$(CONFIG_IO_FILE) += module/io/codec/text.o
 obj-$(CONFIG_IO_FILE) += module/io/nullport.o
+obj-$(CONFIG_IO_FILE) += module/io/initport.o
 obj-$(CONFIG_ERROR_ATOM_ID) += module/error/atom_id.o
 obj-$(CONFIG_ERROR_SINGLE) += module/error/single.o
 obj-$(CONFIG_ERROR_PRETTY) += module/error/pretty.o
