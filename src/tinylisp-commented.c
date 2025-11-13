@@ -383,7 +383,6 @@ lexp eval(lexp x,lexp e) {
   static int indent = 0;
   static lexp last_env = 0;
   indent++;
-  lexp y = _eval(x,e);
   if (trace_port != NULL) {
     lexp line;
     /* Do we have new envionment */
@@ -399,7 +398,10 @@ lexp eval(lexp x,lexp e) {
     line = cons(atom("eval"), line);
     line = trace_line(indent, line);
     lexp_write(trace_port, line);
-
+  }
+  lexp y = _eval(x,e);
+  if (trace_port != NULL) {
+    lexp line;
     line = cons(y, nil);
     line = cons(atom("return"), line);
     line = trace_line(indent, line);
