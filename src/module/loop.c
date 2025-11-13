@@ -8,6 +8,7 @@ lexp cdr(lexp p);
 lexp eval(lexp, lexp);
 extern hsptyp sp;
 extern lexp nil;
+extern lexp env;
 
 
 lexp f_loop(lexp t, lexp e) {
@@ -19,7 +20,18 @@ lexp f_loop(lexp t, lexp e) {
       eval(car(exprs), e);
       exprs = cdr(exprs);
     }
-    sp = orig_sp;
+    /* Do we have new environment */
+    if (ord(env) < ord(e)) {
+      /* Since we have new environment in the stack we have to move the
+       * stack pointer forward after the new environment */
+      sp = ord(env);
+      /* Let's use the new environment in the next loop */
+      e = env;
+    } else {
+      /* return back the stack pointer to a place before the loop
+       * (like a garbage collection) */
+      sp = orig_sp;
+    }
   }
   return nil;
 }
