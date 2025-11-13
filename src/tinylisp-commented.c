@@ -381,16 +381,28 @@ lexp trace_line(int indent, lexp line) {
 void print(lexp);
 lexp eval(lexp x,lexp e) {
   static int indent = 0;
+  static lexp last_env = 0;
   indent++;
   lexp y = _eval(x,e);
   if (trace_port != NULL) {
-    lexp line = cons(x, nil);
+    lexp line;
+    /* Do we have new envionment */
+    if (!equ(e, last_env)) {
+      /* Let's print the new environment */
+      last_env = e;
+      line = cons(e, nil);
+      line = cons(atom("in new environment"), line);
+      line = cons(x, line);
+    } else {
+      line = cons(x, nil);
+    }
     line = cons(atom("eval"), line);
     line = trace_line(indent, line);
     lexp_write(trace_port, line);
 
     line = cons(y, nil);
-    line = trace_line(indent+1, line);
+    line = cons(atom("return"), line);
+    line = trace_line(indent, line);
     lexp_write(trace_port, line);
   }
   indent--;
