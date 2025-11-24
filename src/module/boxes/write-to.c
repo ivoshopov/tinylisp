@@ -24,11 +24,9 @@ lexp f_write_to(lexp t, lexp e) {
         if (port == NULL)
                 return mk_error("Couldn't find port called ", port_name);
         t = cdr(t);
-        while (typof(t) != NIL) {
-                lexp_write(port, car(t));
-                t = cdr(t);
-        }
-        return t;
+        if (typof(t) == NIL)
+                return mk_error("Nothing provided as third argument to write-to while writing to: ", port_name);
+        return lexp_write(port, car(t));
 }
 
 
