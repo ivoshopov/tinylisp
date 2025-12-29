@@ -643,6 +643,9 @@ int repl(void) {
   struct primitive *prim_iter = &__start_primitives;
   struct io_typ *default_read_port = get_port(CONFIG_DEFAULT_READ_PORT);
   struct io_typ *default_write_port = get_port(CONFIG_DEFAULT_WRITE_PORT);
+#ifdef CONFIG_DEFAULT_PROMPT
+  lexp prompt = atom(CONFIG_DEFAULT_PROMPT);
+#endif
   nil = box(NIL, 0);
 
   // Initialization of modules
@@ -661,6 +664,9 @@ int repl(void) {
   while (1) {
 #if CONFIG_TRACE
     trace_port = get_port(unbox_atom(assoc(trace_port_key, env)));
+#endif
+#ifdef CONFIG_DEFAULT_PROMPT
+    lexp_write(default_write_port, prompt);
 #endif
     /* TODO: handle an error from the write call */
     lexp_write(default_write_port, eval(lexp_read(default_read_port), env));

@@ -12,7 +12,7 @@ class VPREPLWrapper(replwrap.REPLWrapper):
 class BaseExec(Test):
     def setUp(self):
         super().setUp()
-        self.console = VPREPLWrapper("./src/tinylisp", "[0-9]+>", None, continuation_prompt="[0-9]+>")
+        self.console = VPREPLWrapper("./src/tinylisp", "lissh>", None, continuation_prompt="lissh>")
         self.newline = "\r\n"
 
     def tearDown(self):
