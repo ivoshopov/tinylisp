@@ -28,6 +28,7 @@ class LexpPrinter:
     NIL  = "0x7ffc"
     MACR = "0x7ffd"
     BOX  = "0x7ffe"
+    ERR  = "0x7fff"
     tag_str = {
             ATOM: "ATOM",
             PRIM: "PRIM",
@@ -36,6 +37,7 @@ class LexpPrinter:
             NIL:  "NIL",
             MACR: "MACR",
             BOX:  "BOX",
+            ERR:  "ERR",
             }
 
     def __init__(self, val):
