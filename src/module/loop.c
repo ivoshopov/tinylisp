@@ -11,16 +11,14 @@ extern lexp nil;
 extern lexp env;
 
 
-lexp f_loop(lexp t, lexp e) {
-  lexp exprs;
+lexp f_loop(lexp exprs, lexp e) {
   while (1) {
     hsptyp orig_sp = sp;
-    exprs = t;
     while (typof(exprs) != NIL) {
       eval(car(exprs), e);
       exprs = cdr(exprs);
     }
-    /* Do we have new environment */
+    /* Do we have new environment created by define function? */
     if (ord(env) < ord(e)) {
       /* Since we have new environment in the stack we have to move the
        * stack pointer forward after the new environment */
@@ -38,12 +36,4 @@ lexp f_loop(lexp t, lexp e) {
 
 PRIMITIVE_SECTION struct primitive loop_primitive[] = {
         {"loop!", f_loop},
-};
-
-static void init()
-{
-}
-
-MODULE_SECTION struct module loop_mod = {
-        .setup = init,
 };
