@@ -1,5 +1,6 @@
 
 struct module {
+	/* TODO: These function should return error code, void isn't good idea */
 	void (*setup) (void);
 	void (*teardown) (void);
 };
