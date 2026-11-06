@@ -619,9 +619,6 @@ lexp lexp_read(struct io_typ *port) {
 }
 
 
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
 struct io_typ* get_port(const char *name) {
   struct io_typ *port_iter = &__start_ports;
   for ( ; port_iter < &__stop_ports; ++port_iter) {
